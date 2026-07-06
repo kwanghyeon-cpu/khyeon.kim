@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recap — 영상을 올리면, AI가 대신 봐드립니다</title>
+<style>
+  :root{
+    --bg:#F5F7F8;
+    --surface:#FFFFFF;
+    --border:#E4E7EB;
+    --text:#1B2430;
+    --text-muted:#6B7686;
+    --teal:#0E9488;
+    --teal-dark:#0B7A70;
+    --teal-soft:#E4F5F3;
+    --blue:#2F6FED;
+    --amber:#F5A524;
+    --danger:#E4574C;
+    --radius:18px;
+    --shadow:0 1px 2px rgba(20,25,35,.03), 0 10px 30px rgba(20,25,35,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    word-break:keep-all;
+    overflow-wrap:break-word;
+    display:flex;
+    height:100vh;
+    overflow:hidden;
+  }
+  a,button{font-family:inherit;}
+  button{cursor:pointer;transition:background-color .18s ease, opacity .18s ease, transform .12s ease;}
+  button:active{transform:scale(0.97);}
+  button:focus-visible, .tick:focus-visible, [contenteditable]:focus-visible{
+    outline:2px solid var(--blue); outline-offset:2px;
+  }
+
+  /* ---------- Sidebar ---------- */
+  aside{
+    width:230px;
+    background:var(--teal-dark);
+    padding:16px 14px;
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    overflow-y:auto;
+    box-shadow:1px 0 0 rgba(0,0,0,.08);
+    position:relative;
+    z-index:1;
+  }
+  .brand{
+    display:flex;align-items:center;gap:8px;flex-shrink:0;
+    font-weight:700;font-size:18px;color:#FFFFFF;
+    padding:4px 4px 14px;letter-spacing:-.03em;
+  }
+  .side-meta{flex:1;min-height:0;}
+  .side-meta h4{
+    margin:0 0 10px;font-size:10.5px;color:#B9E4DC;font-weight:700;
+    text-transform:uppercase;letter-spacing:.06em;
+  }
+  .side-meta-empty{
+    font-size:12px;color:#B9E4DC;line-height:1.5;
+    border:1px dashed rgba(255,255,255,0.25);border-radius:14px;padding:14px 10px;text-align:center;
+  }
+  .version{font-size:10.5px;color:#8FCFC3;padding:6px 4px 0;flex-shrink:0;}
+
+  /* ---------- Main ---------- */
+  main{flex:1;display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden;}
+  header{
+    background:rgba(255,255,255,.78);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+    box-shadow:0 1px 0 rgba(20,25,35,.06);
+    padding:12px 24px;display:flex;justify-content:space-between;align-items:center;
+    flex-shrink:0;position:relative;z-index:2;
+  }
+  header h1{font-size:17px;margin:0;letter-spacing:-.02em;font-weight:700;}
+  .header-actions{display:flex;gap:8px;}
+  .btn-ghost{
+    background:rgba(20,25,35,.045);border:none;color:var(--text-muted);
+    padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:600;
+  }
+  .btn-ghost:hover{background:rgba(20,25,35,.08);color:var(--text);}
+  .btn-primary{
+    background:var(--blue);border:none;color:#fff;
+    padding:7px 15px;border-radius:999px;font-size:12.5px;font-weight:600;
+  }
+  .btn-primary:hover{background:#2158C4;}
+  .btn-primary:disabled{background:#AEC2EE;cursor:not-allowed;}
+
+  .content{
+    flex:1;min-height:0;padding:16px 24px;max-width:1400px;width:100%;margin:0 auto;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  #uploadSection{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow-y:auto;}
+  .upload-wrap{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0;}
+  .hero{text-align:center;}
+  .hero-title{font-size:26px;font-weight:700;color:var(--text);margin:0 0 6px;letter-spacing:-.025em;}
+  .hero-sub{font-size:13.5px;color:var(--text-muted);margin:0;}
+  .feature-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;}
+  .feature{
+    display:flex;align-items:flex-start;gap:9px;text-align:left;
+    background:var(--surface);border:none;box-shadow:var(--shadow);border-radius:16px;
+    padding:12px 14px;flex:1;min-width:170px;
+  }
+  .feature-icon{
+    flex-shrink:0;width:30px;height:30px;border-radius:50%;
+    background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:15px;
+  }
+  .feature strong{display:block;font-size:12px;color:var(--text);margin-bottom:2px;}
+  .feature span{display:block;font-size:11px;color:var(--text-muted);line-height:1.4;}
+  .dropzone{width:100%;}
+
+  .or-divider{display:flex;align-items:center;gap:10px;width:100%;color:var(--text-muted);font-size:12px;}
+  .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .youtube-row{display:flex;gap:8px;width:100%;}
+  .youtube-row input{
+    flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:999px;
+    font-size:13px;background:var(--surface);color:var(--text);
+  }
+  .youtube-row input:focus{outline:none;border-color:var(--teal);}
+  .youtube-note{font-size:11.5px;color:var(--text-muted);text-align:center;margin:0;}
+
+  #youtubeEmbed{width:100%;height:220px;border:none;display:block;background:#000;}
+
+  .two-col{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;}
+  .col-left{min-height:0;overflow-y:auto;padding-right:2px;}
+  .col-right{min-height:0;overflow-y:auto;}
+  @media (max-width:900px){
+    .two-col{grid-template-columns:1fr;grid-auto-rows:min-content;overflow-y:auto;}
+    .col-left,.col-right{overflow:visible;}
+  }
+
+  /* ---------- Upload dropzone ---------- */
+  .dropzone{
+    background:var(--surface);border:2px dashed #D5DADF;border-radius:20px;
+    padding:40px 24px;text-align:center;color:var(--text-muted);
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone.dragover{border-color:var(--teal);background:var(--teal-soft);}
+  .dropzone .icon{font-size:30px;margin-bottom:8px;}
+  .dropzone .title{font-weight:700;color:var(--text);font-size:14px;margin-bottom:4px;}
+  .dropzone .hint{font-size:12.5px;color:var(--text-muted);}
+  .dropzone input{display:none;}
+  .dropzone .browse{color:var(--blue);font-weight:600;text-decoration:underline;cursor:pointer;}
+
+  /* ---------- Video preview ---------- */
+  .video-card{
+    background:var(--surface);border:none;border-radius:var(--radius);
+    padding:12px;box-shadow:var(--shadow);margin-bottom:12px;
+  }
+  .video-card .filename{font-size:12px;color:var(--text-muted);margin-bottom:8px;display:flex;justify-content:space-between;}
+  .meta-grid{display:flex;flex-direction:column;gap:10px;}
+  .meta-label{font-size:10px;color:#8FCFC3;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+  .meta-value{color:#FFFFFF;font-size:12.5px;line-height:1.35;}
+  .meta-note{margin:14px 0 0;font-size:10.5px;color:#B9E4DC;line-height:1.5;border-top:1px solid rgba(255,255,255,0.15);padding-top:10px;}
+  .video-wrap{position:relative;border-radius:14px;overflow:hidden;background:#111;}
+  video{width:100%;display:block;max-height:220px;background:#000;}
+  .scan-line{
+    position:absolute;left:0;top:0;height:3px;width:100%;
+    background:linear-gradient(90deg, transparent, var(--teal), transparent);
+    animation:scan 1.4s linear infinite;pointer-events:none;
+  }
+  @keyframes scan{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+
+  /* ---------- Processing card ---------- */
+  .processing-card{
+    background:var(--surface);border:none;border-radius:var(--radius);
+    padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px;
+  }
+  .progress-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+  .progress-row .status{font-weight:600;color:var(--text);}
+  .progress-track{width:100%;background:#EAECEF;height:7px;border-radius:99px;overflow:hidden;}
+  .progress-fill{background:linear-gradient(90deg,var(--teal),var(--blue));height:100%;border-radius:99px;transition:width .3s ease;}
+
+  /* ---------- Timeline ---------- */
+  .timeline-card{
+    background:var(--surface);border:none;border-radius:var(--radius);
+    padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px;
+  }
+  .timeline-card h4{margin:0 0 8px;font-size:11.5px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .timeline-strip{position:relative;height:28px;background:#EEF1F3;border-radius:10px;}
+  .tick{
+    position:absolute;top:0;bottom:0;width:3px;background:var(--amber);
+    border-radius:2px;transform:translateX(-50%);border:none;padding:0;
+  }
+  .tick:hover, .tick.active{background:var(--teal);width:4px;}
+  .tick .tick-label{
+    position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    background:var(--text);color:#fff;font-size:11px;padding:2px 6px;border-radius:6px;
+    white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .1s;
+  }
+  .tick:hover .tick-label{opacity:1;}
+
+  /* ---------- Summary ---------- */
+  .summary-card{
+    background:linear-gradient(135deg,var(--teal-soft),#EDF3FF);
+    border:none;border-radius:var(--radius);
+    padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px;
+  }
+  .summary-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .summary-card .eyebrow{font-size:11px;font-weight:700;color:var(--teal-dark);text-transform:uppercase;letter-spacing:.05em;}
+  .summary-retry{
+    background:rgba(255,255,255,.7);border:none;color:var(--teal-dark);
+    font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;flex-shrink:0;
+  }
+  .summary-retry:hover{background:#fff;}
+  .summary-card p{margin:0;line-height:1.6;font-size:13px;color:var(--text);white-space:pre-line;}
+  .summary-card p.loading{color:var(--text-muted);white-space:normal;}
+  .summary-error{margin-top:8px !important;font-size:11px !important;color:var(--danger) !important;line-height:1.4 !important;}
+
+  /* ---------- Cuts grid ---------- */
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);padding:2px 0 6px;z-index:2;}
+  .section-title{font-size:14px;font-weight:800;margin:0;letter-spacing:-.01em;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media (min-width:1300px){.grid{grid-template-columns:repeat(4,1fr);}}
+  @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:760px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .content{padding:14px 16px;}
+    body{flex-direction:column;height:auto;overflow:auto;}
+    main{height:auto;overflow:visible;}
+    aside{width:100%;border-right:none;border-bottom:1px solid var(--teal-dark);max-height:240px;}
+  }
+  @media (max-width:480px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--surface);border:none;border-radius:16px;
+    overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card.highlight{box-shadow:0 0 0 2px var(--teal);}
+  .thumb{position:relative;aspect-ratio:16/9;background:#12161C;overflow:hidden;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .badge{position:absolute;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;color:#fff;}
+  .badge.idx{top:8px;left:8px;background:rgba(0,0,0,.6);}
+  .badge.time{bottom:8px;right:8px;background:rgba(0,0,0,.7);font-variant-numeric:tabular-nums;}
+  .card-body{padding:8px 9px 9px;flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:8px;}
+  .pulse{animation:pulse 1.3s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+  .card-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;border-top:1px solid var(--border);padding-top:8px;text-align:center;}
+  .card-actions button{background:none;border:none;font-size:11px;color:var(--text-muted);padding:4px 0;border-radius:8px;}
+  .card-actions button:hover{color:var(--teal-dark);background:var(--teal-soft);}
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(15,18,24,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:24px;
+  }
+  .lightbox.open{display:flex;}
+  .lightbox-inner{background:var(--surface);border-radius:22px;max-width:720px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .lightbox-inner img{width:100%;display:block;background:#000;}
+  .lightbox-body{padding:18px 20px;}
+  .lightbox-body h3{margin:0 0 6px;font-size:16px;}
+  .lightbox-body p{margin:0;color:var(--text-muted);font-size:13.5px;line-height:1.6;}
+  .lightbox-close{
+    position:absolute;top:18px;right:calc(50% - 360px + 18px);
+    background:rgba(255,255,255,.18);border:none;color:#fff;width:34px;height:34px;
+    border-radius:50%;font-size:16px;
+  }
+  @media (max-width:800px){.lightbox-close{right:24px;top:24px;}}
+
+  .empty-hint{font-size:12px;color:var(--text-muted);margin-top:10px;text-align:center;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+  <aside>
+    <div class="brand"><span>📹</span><span>Recap</span></div>
+    <div class="side-meta" id="sideMeta">
+      <h4>동영상 정보</h4>
+      <div class="side-meta-empty" id="sideMetaEmpty">동영상을 업로드하면<br>상세 정보가 여기에 표시돼요.</div>
+      <div class="meta-grid hidden" id="metaGrid"></div>
+      <p class="meta-note hidden" id="metaNote"></p>
+    </div>
+    <div class="version">v1.0.0 · 클라이언트 실행</div>
+  </aside>
+
+  <main>
+    <header>
+      <h1 id="pageTitle">Recap</h1>
+      <div class="header-actions">
+        <button class="btn-ghost" id="aiSettingsBtn">⚙️ Gemini 설정 · <span id="providerBadge">gemini-2.5-flash</span></button>
+        <button class="btn-ghost" id="exportBtn" disabled>내보내기</button>
+        <button class="btn-primary" id="resetBtn" disabled>🔄 새로 분석하기</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Upload -->
+      <div id="uploadSection">
+        <div class="upload-wrap">
+          <div class="hero">
+            <h2 class="hero-title">영상을 올리면, AI가 대신 봐드립니다</h2>
+            <p class="hero-sub">Gemini가 요약하고, 브라우저가 핵심 장면을 자동으로 캡처합니다</p>
+          </div>
+
+          <div class="feature-row">
+            <div class="feature">
+              <span class="feature-icon">🎬</span>
+              <div><strong>장면 자동 캡처</strong><span>컷 전환을 감지해 썸네일 추출</span></div>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">🧠</span>
+              <div><strong>Gemini 영상 요약</strong><span>핵심 주제 · 타임라인 · 3줄 요약</span></div>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">📥</span>
+              <div><strong>원본 해상도 다운로드</strong><span>낱장으로, 또는 한 장에 모아서</span></div>
+            </div>
+          </div>
+
+          <div class="dropzone" id="dropzone">
+            <p class="icon">📄</p>
+            <p class="title">여기에 동영상 파일을 끌어다 놓으세요</p>
+            <p class="hint">또는 <span class="browse" id="browseLink">파일 선택</span> · MP4, WebM, MOV 지원 · 영상 요약에는 Gemini API 키가 필요해요 (우측 상단 "Gemini 설정")</p>
+            <input type="file" id="fileInput" accept="video/*">
+          </div>
+
+          <div class="or-divider"><span>또는</span></div>
+
+          <div class="youtube-row">
+            <input type="text" id="youtubeUrlInput" placeholder="유튜브 영상 링크를 붙여넣으세요 (예: https://www.youtube.com/watch?v=...)">
+            <button class="btn-primary" id="youtubeAnalyzeBtn" type="button">요약하기</button>
+          </div>
+          <p class="youtube-note">유튜브 링크는 <strong>AI 요약만</strong> 지원돼요 (공개 영상만 가능 · 컷 캡처·타임라인은 파일 업로드에서만 제공됩니다)</p>
+        </div>
+      </div>
+
+      <!-- Video preview + processing -->
+      <div id="videoSection" class="hidden two-col">
+        <div class="col-left">
+          <div class="video-card">
+            <div class="filename"><span id="fileNameLabel"></span><span id="fileMetaLabel"></span></div>
+            <div class="video-wrap">
+              <video id="videoEl" controls playsinline muted></video>
+              <iframe id="youtubeEmbed" class="hidden" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <div class="scan-line hidden" id="scanLine"></div>
+            </div>
+          </div>
+
+          <div class="processing-card hidden" id="processingCard">
+            <div class="progress-row">
+              <span class="status" id="statusText">준비 중...</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          </div>
+
+          <div class="timeline-card hidden" id="timelineCard">
+            <h4>씬 타임라인</h4>
+            <div class="timeline-strip" id="timelineStrip"></div>
+          </div>
+
+          <div class="summary-card hidden" id="summaryCard">
+            <div class="summary-head">
+              <span class="eyebrow" id="summaryEyebrow">영상 요약</span>
+              <button class="summary-retry hidden" id="summaryRetryBtn" type="button">↻ 다시 시도</button>
+            </div>
+            <p id="summaryText" class="loading">영상을 분석하는 중입니다...</p>
+            <p class="summary-error hidden" id="summaryError"></p>
+          </div>
+        </div>
+
+        <div class="col-right">
+          <div id="gridSection" class="hidden">
+            <div class="section-head">
+              <h3 class="section-title">추출된 주요 컷 및 하이라이트</h3>
+              <button class="btn-ghost" id="montageBtn" type="button">🖼️ 전체 이미지로 저장</button>
+            </div>
+            <div class="grid" id="cutsGrid"></div>
+            <p class="empty-hint" id="gridHint">장면 전환 지점의 썸네일이에요. 원본 해상도로 다운로드하거나 확대해서 볼 수 있어요.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+    <div class="lightbox-inner">
+      <img id="lightboxImg" alt="">
+      <div class="lightbox-body">
+        <h3 id="lightboxTitle"></h3>
+        <p id="lightboxDesc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gemini Settings modal -->
+  <div class="lightbox" id="settingsModal">
+    <button class="lightbox-close" id="settingsClose">✕</button>
+    <div class="lightbox-inner">
+      <div class="lightbox-body">
+        <h3>Gemini 설정</h3>
+        <p style="margin-bottom:16px;">영상 요약은 Gemini로 처리됩니다. API 키는 파일에 저장되지 않고 이 탭을 열어둔 동안 메모리에만 유지되며, 새로고침하면 사라집니다.</p>
+
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:5px;">Gemini API 키</label>
+        <input type="password" id="geminiKeyInput" placeholder="AIzaSy..." value="AQ.Ab8RN6JCC2hW4xQ_qarUAJ2GQmFwomUpygJNO_2Bga7D0mM52g" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:13px;margin-bottom:10px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:5px;">모델명</label>
+        <input type="text" id="geminiModelInput" value="gemini-2.5-flash" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:13px;margin-bottom:6px;">
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Google AI Studio(aistudio.google.com)에서 키를 발급받을 수 있어요. 작은 영상(약 18MB 이하)은 바로 전송되고, 큰 영상은 브라우저에서 자동으로 압축한 뒤 업로드돼요 (최초 1회 압축 도구 다운로드 포함, 시간이 꽤 걸릴 수 있어요).</p>
+
+        <p id="settingsError" class="hidden" style="color:var(--danger);font-size:12.5px;margin-bottom:10px;"></p>
+        <button class="btn-primary" id="settingsApplyBtn" style="width:100%;padding:10px;">적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- hidden work canvases -->
+  <canvas id="smallCanvas" width="32" height="18" style="display:none"></canvas>
+  <canvas id="thumbCanvas" style="display:none"></canvas>
+
+<script type="module">
+import { GoogleGenAI, createPartFromUri } from 'https://esm.run/@google/genai';
+import { FFmpeg } from 'https://esm.run/@ffmpeg/ffmpeg';
+import { toBlobURL, fetchFile } from 'https://esm.run/@ffmpeg/util';
+
+(function(){
+  const MAX_CUTS = 20;
+  const THUMB_WIDTH = 400;
+  const MAX_SAMPLES = 60;
+  const GEMINI_INLINE_MAX_BYTES = 18 * 1024 * 1024; // rough safe ceiling for inline base64 video upload
+
+  // ---- DOM refs ----
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const browseLink = document.getElementById('browseLink');
+  const youtubeUrlInput = document.getElementById('youtubeUrlInput');
+  const youtubeAnalyzeBtn = document.getElementById('youtubeAnalyzeBtn');
+  const youtubeEmbed = document.getElementById('youtubeEmbed');
+  const uploadSection = document.getElementById('uploadSection');
+  const videoSection = document.getElementById('videoSection');
+  const videoEl = document.getElementById('videoEl');
+  const scanLine = document.getElementById('scanLine');
+  const fileNameLabel = document.getElementById('fileNameLabel');
+  const fileMetaLabel = document.getElementById('fileMetaLabel');
+  const processingCard = document.getElementById('processingCard');
+  const statusText = document.getElementById('statusText');
+  const progressPct = document.getElementById('progressPct');
+  const progressFill = document.getElementById('progressFill');
+  const timelineCard = document.getElementById('timelineCard');
+  const timelineStrip = document.getElementById('timelineStrip');
+  const summaryCard = document.getElementById('summaryCard');
+  const summaryText = document.getElementById('summaryText');
+  const summaryEyebrow = document.getElementById('summaryEyebrow');
+  const summaryRetryBtn = document.getElementById('summaryRetryBtn');
+  const summaryError = document.getElementById('summaryError');
+  const gridSection = document.getElementById('gridSection');
+  const cutsGrid = document.getElementById('cutsGrid');
+  const gridHint = document.getElementById('gridHint');
+  const montageBtn = document.getElementById('montageBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const metaCard = document.getElementById('sideMeta');
+  const sideMetaEmpty = document.getElementById('sideMetaEmpty');
+  const smallCanvas = document.getElementById('smallCanvas');
+  const thumbCanvas = document.getElementById('thumbCanvas');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxTitle = document.getElementById('lightboxTitle');
+  const lightboxDesc = document.getElementById('lightboxDesc');
+  const lightboxClose = document.getElementById('lightboxClose');
+  const metaGrid = document.getElementById('metaGrid');
+  const metaNote = document.getElementById('metaNote');
+
+  let metaBasicEntries = [];
+  let metaEmbeddedEntries = [];
+
+  let cuts = [];        // {time, thumb, el}  -- used for grid/timeline (scene-change cuts)
+  let videoURL = null;
+  let currentFile = null;
+  let overallSummary = "";
+  let isYoutubeMode = false;
+  let currentYoutubeUrl = "";
+
+  // ---- Gemini settings state (in-memory only, never persisted) ----
+  // NOTE: hardcoded per user request — this key will be visible in the page source
+  // if this file is shared. Only safe for personal/local use.
+  let geminiApiKey = 'AQ.Ab8RN6JCC2hW4xQ_qarUAJ2GQmFwomUpygJNO_2Bga7D0mM52g';
+  let geminiModel = 'gemini-2.5-flash';
+
+  const aiSettingsBtn = document.getElementById('aiSettingsBtn');
+  const providerBadge = document.getElementById('providerBadge');
+  const settingsModal = document.getElementById('settingsModal');
+  const settingsClose = document.getElementById('settingsClose');
+  const geminiKeyInput = document.getElementById('geminiKeyInput');
+  const geminiModelInput = document.getElementById('geminiModelInput');
+  const settingsError = document.getElementById('settingsError');
+  const settingsApplyBtn = document.getElementById('settingsApplyBtn');
+
+  aiSettingsBtn.addEventListener('click', ()=>{
+    settingsError.classList.add('hidden');
+    settingsModal.classList.add('open');
+  });
+  settingsClose.addEventListener('click', ()=> settingsModal.classList.remove('open'));
+  settingsModal.addEventListener('click', e=>{ if(e.target===settingsModal) settingsModal.classList.remove('open'); });
+
+  settingsApplyBtn.addEventListener('click', ()=>{
+    const key = geminiKeyInput.value.trim();
+    const model = geminiModelInput.value.trim();
+    if (!key){
+      settingsError.textContent = 'Gemini API 키를 입력해주세요.';
+      settingsError.classList.remove('hidden');
+      return;
+    }
+    geminiApiKey = key;
+    geminiModel = model || 'gemini-2.5-flash';
+    providerBadge.textContent = geminiModel;
+    settingsError.classList.add('hidden');
+    settingsModal.classList.remove('open');
+  });
+
+  // ---------- Upload handling ----------
+  browseLink.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('click', (e)=>{ if(e.target!==browseLink) fileInput.click(); });
+  fileInput.addEventListener('change', e => { if(e.target.files[0]) loadVideo(e.target.files[0]); });
+
+
+  ['dragenter','dragover'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('dragover'); });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('video/')) loadVideo(f);
+  });
+
+  function loadVideo(file){
+    isYoutubeMode = false;
+    currentYoutubeUrl = '';
+    youtubeEmbed.classList.add('hidden');
+    youtubeEmbed.src = '';
+    videoEl.classList.remove('hidden');
+
+    currentFile = file;
+    if (videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = URL.createObjectURL(file);
+    videoEl.src = videoURL;
+    fileNameLabel.textContent = file.name;
+    fileMetaLabel.textContent = formatBytes(file.size);
+
+    uploadSection.classList.add('hidden');
+    videoSection.classList.remove('hidden');
+    resetBtn.disabled = false;
+
+    sideMetaEmpty.classList.add('hidden');
+    metaGrid.classList.remove('hidden');
+    metaNote.classList.remove('hidden');
+    metaBasicEntries = [
+      ['파일명', file.name],
+      ['파일 크기', formatBytes(file.size)],
+      ['형식 (MIME)', file.type || '알 수 없음'],
+      ['파일 수정일시', file.lastModified ? new Date(file.lastModified).toLocaleString('ko-KR') : '알 수 없음']
+    ];
+    metaEmbeddedEntries = [];
+    metaNote.textContent = '메타데이터 확인 중...';
+    renderMeta();
+
+    videoEl.onloadedmetadata = () => {
+      const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+      const g = gcd(vw, vh) || 1;
+      metaBasicEntries.push(
+        ['해상도', `${vw} × ${vh}px`],
+        ['종횡비', `${vw / g}:${vh / g}`],
+        ['재생 시간', formatDurationLong(videoEl.duration)]
+      );
+      renderMeta();
+      startAnalysis();
+    };
+    videoEl.onerror = () => {
+      const err = videoEl.error;
+      const reasons = {
+        1: '로딩이 중단되었습니다 (MEDIA_ERR_ABORTED).',
+        2: '네트워크 오류로 파일을 읽지 못했습니다 (MEDIA_ERR_NETWORK).',
+        3: '디코딩할 수 없는 코덱입니다 (MEDIA_ERR_DECODE). 파일이 손상되었거나 브라우저가 지원하지 않는 코덱일 수 있습니다.',
+        4: '브라우저가 지원하지 않는 형식/코덱입니다 (MEDIA_ERR_SRC_NOT_SUPPORTED). H.265/HEVC, 일부 컨테이너는 재생이 안 될 수 있습니다.'
+      };
+      const msg = err ? (reasons[err.code] || `알 수 없는 오류 (code ${err.code})`) : '알 수 없는 오류';
+      statusText.textContent = "동영상을 불러올 수 없습니다: " + msg;
+      processingCard.classList.remove('hidden');
+      progressFill.style.width = '0%';
+      console.error('Video load error:', err, 'file:', file.type, file.name, formatBytes(file.size));
+    };
+
+    populateEmbeddedMeta(file);
+  }
+
+  function extractYoutubeId(url){
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+      /(?:youtu\.be\/)([\w-]{11})/,
+      /(?:youtube\.com\/embed\/)([\w-]{11})/,
+      /(?:youtube\.com\/shorts\/)([\w-]{11})/
+    ];
+    for (const p of patterns){
+      const m = url.match(p);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
+  async function startYoutubeAnalysis(rawUrl){
+    const videoId = extractYoutubeId(rawUrl.trim());
+    if (!videoId){
+      alert('유효한 유튜브 링크가 아닙니다. 예: https://www.youtube.com/watch?v=... 또는 https://youtu.be/...');
+      return;
+    }
+
+    isYoutubeMode = true;
+    currentFile = null;
+    currentYoutubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    if (videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = null;
+    videoEl.pause(); videoEl.removeAttribute('src');
+    videoEl.classList.add('hidden');
+    youtubeEmbed.src = `https://www.youtube.com/embed/${videoId}`;
+    youtubeEmbed.classList.remove('hidden');
+
+    fileNameLabel.textContent = '유튜브 영상';
+    fileMetaLabel.textContent = currentYoutubeUrl;
+
+    uploadSection.classList.add('hidden');
+    videoSection.classList.remove('hidden');
+    resetBtn.disabled = false;
+
+    sideMetaEmpty.classList.add('hidden');
+    metaGrid.classList.remove('hidden');
+    metaNote.classList.remove('hidden');
+    metaBasicEntries = [
+      ['소스', '유튜브 링크'],
+      ['영상 링크', currentYoutubeUrl]
+    ];
+    metaEmbeddedEntries = [];
+    metaNote.textContent = '유튜브 링크 모드에서는 컷 캡처와 상세 파일 정보를 제공하지 않아요 (AI 요약만 가능).';
+    renderMeta();
+
+    processingCard.classList.remove('hidden');
+    summaryCard.classList.remove('hidden');
+    setProgress(0, 'Gemini에 유튜브 영상 분석을 요청하는 중...');
+
+    await generateSummary();
+
+    setProgress(100, '분석 완료');
+    setTimeout(()=> processingCard.classList.add('hidden'), 900);
+    exportBtn.disabled = false;
+  }
+
+  youtubeAnalyzeBtn.addEventListener('click', () => {
+    const url = youtubeUrlInput.value.trim();
+    if (!url){ alert('유튜브 링크를 입력해주세요.'); return; }
+    startYoutubeAnalysis(url);
+  });
+  youtubeUrlInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') youtubeAnalyzeBtn.click();
+  });
+
+  function resetAll(){
+    cuts = []; currentFile = null; overallSummary = '';
+    isYoutubeMode = false; currentYoutubeUrl = '';
+    youtubeEmbed.src = ''; youtubeEmbed.classList.add('hidden');
+    youtubeUrlInput.value = '';
+    videoEl.classList.remove('hidden');
+    metaBasicEntries = []; metaEmbeddedEntries = [];
+    if (videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = null;
+    videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load();
+    uploadSection.classList.remove('hidden');
+    videoSection.classList.add('hidden');
+    [processingCard, timelineCard, summaryCard, gridSection].forEach(el=>el.classList.add('hidden'));
+    cutsGrid.innerHTML = ''; timelineStrip.innerHTML = '';
+    gridHint.textContent = '장면 전환 지점의 썸네일이에요. 원본 해상도로 다운로드하거나 확대해서 볼 수 있어요.';
+    metaGrid.innerHTML = ''; metaGrid.classList.add('hidden');
+    metaNote.textContent = ''; metaNote.classList.add('hidden');
+    sideMetaEmpty.classList.remove('hidden');
+    summaryText.textContent = '영상을 분석하는 중입니다...';
+    summaryText.classList.add('loading');
+    summaryEyebrow.textContent = '영상 요약';
+    summaryError.classList.add('hidden'); summaryError.textContent = '';
+    summaryRetryBtn.classList.add('hidden');
+    exportBtn.disabled = true; resetBtn.disabled = true;
+    fileInput.value = '';
+  }
+  resetBtn.addEventListener('click', resetAll);
+
+  // ---------- Analysis pipeline ----------
+  async function startAnalysis(){
+    processingCard.classList.remove('hidden');
+    setProgress(0, '영상 요약을 요청하는 중...');
+
+    const duration = videoEl.duration;
+    if (!isFinite(duration) || duration <= 0){
+      setProgress(0, '동영상 길이를 확인할 수 없습니다.');
+      return;
+    }
+
+    summaryCard.classList.remove('hidden');
+    await generateSummary();
+
+    setProgress(70, '주요 컷을 캡처하는 중...');
+    const timelineTimes = parseTimelineTimestamps(overallSummary);
+
+    let cutsResult = [];
+    let cutsSource = '';
+    if (timelineTimes.length){
+      cutsResult = await captureCutsAtTimestamps(timelineTimes, duration);
+      cutsSource = 'gemini-timeline';
+    }
+    if (cutsResult.length === 0){
+      cutsResult = await detectCutsLocally(duration);
+      cutsSource = 'local-diff';
+    }
+    cuts = cutsResult;
+
+    if (cuts.length === 0){
+      setProgress(100, '캡처할 장면을 찾지 못했습니다.');
+      setTimeout(()=> processingCard.classList.add('hidden'), 900);
+      exportBtn.disabled = false;
+      return;
+    }
+
+    setProgress(95, '중복 이미지를 확인하는 중...');
+    const beforeDedupeCount = cuts.length;
+    cuts = await dedupeCuts(cuts);
+    const dedupedCount = beforeDedupeCount - cuts.length;
+
+    renderTimeline(duration);
+    renderGridSkeleton();
+    timelineCard.classList.remove('hidden');
+    gridSection.classList.remove('hidden');
+    const sourceHint = cutsSource === 'gemini-timeline'
+      ? '위 "영상 요약"의 타임라인 요약에 나온 시점을 기준으로 캡처됐습니다.'
+      : '요약에서 타임라인을 찾지 못해 장면 전환 감지로 대체 캡처됐습니다.';
+    gridHint.textContent = dedupedCount > 0
+      ? `${sourceHint} 서로 비슷한 이미지 ${dedupedCount}장은 제외했습니다. 원본 해상도로 다운로드하거나 확대해서 볼 수 있어요.`
+      : `${sourceHint} 원본 해상도로 다운로드하거나 확대해서 볼 수 있어요.`;
+
+    setProgress(100, '분석 완료');
+    setTimeout(()=> processingCard.classList.add('hidden'), 900);
+    exportBtn.disabled = false;
+  }
+
+  // Parse "MM:SS" / "HH:MM:SS" timestamps out of the timeline section of the Gemini summary.
+  function parseTimelineTimestamps(text){
+    if (!text) return [];
+    const startIdx = text.search(/⏱️|타임라인/);
+    const afterStart = startIdx >= 0 ? text.slice(startIdx) : text;
+    const endIdx = afterStart.search(/💡|3\s*줄\s*요약/);
+    const section = endIdx >= 0 ? afterStart.slice(0, endIdx) : afterStart;
+
+    const regex = /(\d{1,2}):(\d{2})(?::(\d{2}))?/g;
+    const seen = new Set();
+    const times = [];
+    let m;
+    while ((m = regex.exec(section)) !== null){
+      const seconds = m[3] !== undefined
+        ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3])
+        : (+m[1]) * 60 + (+m[2]);
+      if (!seen.has(seconds)){
+        seen.add(seconds);
+        times.push(seconds);
+      }
+    }
+    return times.sort((a, b) => a - b);
+  }
+
+  // Capture a thumbnail at each given timestamp (used for Gemini-timeline-based cuts).
+  async function captureCutsAtTimestamps(times, duration){
+    const capped = times.filter(t => t >= 0 && t < duration).slice(0, MAX_CUTS);
+    const result = [];
+    for (let i = 0; i < capped.length; i++){
+      const t = Math.min(capped[i], Math.max(0, duration - 0.05));
+      try { await seekTo(t); } catch(e){ continue; }
+      result.push({ time: t, thumb: drawThumb(), el: null });
+      setProgress(70 + ((i + 1) / capped.length) * 20, `타임라인 기준 컷 캡처 중... (${i + 1}/${capped.length})`);
+    }
+    return result;
+  }
+
+  // Fallback: detect scene cuts locally via frame-diffing (used when no usable Gemini timeline exists).
+  async function detectCutsLocally(duration){
+    scanLine.classList.remove('hidden');
+    const interval = clamp(duration / MAX_SAMPLES, 0.5, 4);
+    const totalSamples = Math.max(1, Math.floor(duration / interval));
+    const smallCtx = smallCanvas.getContext('2d', {willReadFrequently:true});
+
+    let prevSmallData = null;
+    const candidates = [];
+
+    for (let i = 0; i <= totalSamples; i++){
+      const t = Math.min(i * interval, Math.max(0, duration - 0.05));
+      try { await seekTo(t); } catch(e){ continue; }
+
+      smallCtx.drawImage(videoEl, 0, 0, 32, 18);
+      const smallData = smallCtx.getImageData(0, 0, 32, 18).data;
+
+      const thumb = drawThumb();
+      const diff = prevSmallData ? frameDiff(prevSmallData, smallData) : Infinity;
+      candidates.push({ t, diff, thumb });
+      prevSmallData = smallData;
+
+      setProgress(70 + ((i + 1) / (totalSamples + 1)) * 20, `장면 전환 분석 중... (${i + 1}/${totalSamples + 1})`);
+    }
+
+    scanLine.classList.add('hidden');
+    return selectCuts(candidates, duration).map(c => ({ time: c.t, thumb: c.thumb, el: null }));
+  }
+
+  function seekTo(t){
+    return new Promise((resolve, reject)=>{
+      const onSeeked = () => { videoEl.removeEventListener('seeked', onSeeked); resolve(); };
+      videoEl.addEventListener('seeked', onSeeked);
+      try { videoEl.currentTime = t; } catch(e){ reject(e); }
+    });
+  }
+
+  function drawThumb(){
+    const vw = videoEl.videoWidth || 480, vh = videoEl.videoHeight || 270;
+    const w = THUMB_WIDTH, h = Math.round(vh * (THUMB_WIDTH / vw));
+    thumbCanvas.width = w; thumbCanvas.height = h;
+    const ctx = thumbCanvas.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, w, h);
+    return thumbCanvas.toDataURL('image/jpeg', 0.72);
+  }
+
+  function frameDiff(a, b){
+    let sum = 0;
+    for (let i = 0; i < a.length; i += 4){
+      sum += Math.abs(a[i]-b[i]) + Math.abs(a[i+1]-b[i+1]) + Math.abs(a[i+2]-b[i+2]);
+    }
+    return sum / (a.length/4);
+  }
+
+  // Compares captured cut thumbnails (small downscale) and drops later ones that are
+  // near-identical to an already-kept cut, keeping the earliest (chronologically first).
+  const DUPLICATE_DIFF_THRESHOLD = 15; // avg per-pixel (R+G+B) diff below this = considered a duplicate
+  async function dedupeCuts(list){
+    if (list.length <= 1) return list;
+    const dedupeCanvas = document.createElement('canvas');
+    dedupeCanvas.width = 16; dedupeCanvas.height = 9;
+    const dedupeCtx = dedupeCanvas.getContext('2d', { willReadFrequently: true });
+
+    const hashes = [];
+    for (const c of list){
+      try{
+        const img = await loadImage(c.thumb);
+        dedupeCtx.drawImage(img, 0, 0, 16, 9);
+        hashes.push(dedupeCtx.getImageData(0, 0, 16, 9).data);
+      } catch(e){
+        hashes.push(null); // if it fails to load, never treat as a duplicate
+      }
+    }
+
+    const kept = [];
+    const keptHashes = [];
+    for (let i = 0; i < list.length; i++){
+      const h = hashes[i];
+      let isDup = false;
+      if (h){
+        for (const kh of keptHashes){
+          if (kh && frameDiff(h, kh) < DUPLICATE_DIFF_THRESHOLD){ isDup = true; break; }
+        }
+      }
+      if (!isDup){ kept.push(list[i]); keptHashes.push(h); }
+    }
+    return kept;
+  }
+
+  function selectCuts(candidates, duration){
+    if (candidates.length === 0) return [];
+    const diffVals = candidates.slice(1).map(c=>c.diff).filter(d=>isFinite(d));
+    const mean = diffVals.reduce((a,b)=>a+b,0) / (diffVals.length || 1);
+    const variance = diffVals.reduce((a,b)=>a+(b-mean)**2,0) / (diffVals.length || 1);
+    const threshold = mean + Math.sqrt(variance) * 0.8;
+
+    let selected = candidates.filter((c,i)=> i===0 || c.diff > threshold);
+
+    const minGap = Math.max(1, duration / 40);
+    let merged = [];
+    for (const c of selected){
+      const last = merged[merged.length-1];
+      if (!last || c.t - last.t >= minGap){
+        merged.push(c);
+      } else if (c.diff > last.diff){
+        merged[merged.length-1] = c;
+      }
+    }
+
+    if (merged.length > MAX_CUTS){
+      const first = merged[0];
+      const rest = merged.slice(1).sort((a,b)=>b.diff-a.diff).slice(0, MAX_CUTS-1);
+      merged = [first, ...rest].sort((a,b)=>a.t-b.t);
+    }
+    return merged;
+  }
+
+  // ---------- Rendering ----------
+  function renderTimeline(duration){
+    timelineStrip.innerHTML = '';
+    cuts.forEach((c, i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'tick';
+      btn.style.left = ((c.time/duration)*100) + '%';
+      btn.title = formatTime(c.time);
+      btn.innerHTML = `<span class="tick-label">${i+1} · ${formatTime(c.time)}</span>`;
+      btn.addEventListener('click', ()=>{
+        videoEl.currentTime = c.time;
+        videoEl.play().catch(()=>{});
+        highlightCard(i);
+      });
+      timelineStrip.appendChild(btn);
+    });
+  }
+
+  function highlightCard(i){
+    document.querySelectorAll('.card').forEach(el=>el.classList.remove('highlight'));
+    if (cuts[i] && cuts[i].el){
+      cuts[i].el.classList.add('highlight');
+      cuts[i].el.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+    }
+  }
+
+  function renderGridSkeleton(){
+    cutsGrid.innerHTML = '';
+    cuts.forEach((c, i)=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="thumb">
+          <img src="${c.thumb}" alt="컷 ${i+1}">
+          <span class="badge idx">${i+1}</span>
+          <span class="badge time">${formatTime(c.time)}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-actions">
+            <button data-act="download" title="원본 해상도로 다운로드 (PNG)">📥 다운로드</button>
+            <button data-act="zoom">🔍 확대</button>
+          </div>
+        </div>`;
+      cutsGrid.appendChild(card);
+      c.el = card;
+
+      card.querySelector('[data-act="download"]').addEventListener('click', ()=> downloadThumb(c, i));
+      card.querySelector('[data-act="zoom"]').addEventListener('click', ()=> openLightbox(c, i));
+    });
+  }
+
+
+  let isCapturing = false;
+
+  async function downloadThumb(c, i){
+    if (isCapturing) return;
+    const btn = c.el ? c.el.querySelector('[data-act="download"]') : null;
+    const originalLabel = btn ? btn.textContent : '';
+    isCapturing = true;
+    if (btn){ btn.textContent = '⏳ 캡처 중...'; btn.disabled = true; }
+
+    const prevTime = videoEl.currentTime;
+    const wasPaused = videoEl.paused;
+
+    try{
+      videoEl.pause();
+      await seekTo(c.time);
+
+      const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+      const fullCanvas = document.createElement('canvas');
+      fullCanvas.width = vw;
+      fullCanvas.height = vh;
+      fullCanvas.getContext('2d').drawImage(videoEl, 0, 0, vw, vh);
+
+      const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('canvas export failed');
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cut_${String(i+1).padStart(2,'0')}_${formatTime(c.time).replace(':','-')}_${vw}x${vh}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(err){
+      console.error('full-res download error', err);
+      alert('원본 화질 캡처에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      try { await seekTo(prevTime); } catch(e){}
+      if (!wasPaused) videoEl.play().catch(()=>{});
+      if (btn){ btn.textContent = originalLabel; btn.disabled = false; }
+      isCapturing = false;
+    }
+  }
+
+  function openLightbox(c, i){
+    lightboxImg.src = c.thumb;
+    lightboxTitle.textContent = `컷 ${i+1} · ${formatTime(c.time)}`;
+    lightboxDesc.textContent = '';
+    lightbox.classList.add('open');
+  }
+  lightboxClose.addEventListener('click', ()=> lightbox.classList.remove('open'));
+  lightbox.addEventListener('click', e=>{ if(e.target===lightbox) lightbox.classList.remove('open'); });
+
+  function loadImage(src){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('이미지를 불러오지 못했습니다.'));
+      img.src = src;
+    });
+  }
+
+  async function downloadCutsMontage(){
+    if (!cuts.length || isCapturing) return;
+    const originalLabel = montageBtn.textContent;
+    montageBtn.disabled = true;
+    montageBtn.textContent = '⏳ 이미지 생성 중...';
+
+    try{
+      const images = await Promise.all(cuts.map(c => loadImage(c.thumb)));
+
+      const cols = Math.min(4, cuts.length) || 1;
+      const rows = Math.ceil(cuts.length / cols);
+      const cellW = 400;
+      const cellH = Math.round(cellW * 9 / 16);
+      const labelH = 34;
+      const pad = 10;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = cols * cellW + (cols + 1) * pad;
+      canvas.height = rows * (cellH + labelH) + (rows + 1) * pad;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#F5F7F8';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      cuts.forEach((c, i)=>{
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = pad + col * (cellW + pad);
+        const y = pad + row * (cellH + labelH + pad);
+        const img = images[i];
+
+        // draw image covering the cell (like CSS object-fit: cover)
+        const scale = Math.max(cellW / img.width, cellH / img.height);
+        const dw = img.width * scale, dh = img.height * scale;
+        const dx = x - (dw - cellW) / 2, dy = y - (dh - cellH) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, cellW, cellH);
+        ctx.clip();
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
+
+        // index badge
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(x + 6, y + 6, 28, 20);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px -apple-system, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), x + 14, y + 17);
+
+        // label strip
+        ctx.fillStyle = '#1B2430';
+        ctx.fillRect(x, y + cellH, cellW, labelH);
+        ctx.fillStyle = '#fff';
+        ctx.font = '13px -apple-system, sans-serif';
+        ctx.fillText(`${i + 1}. ${formatTime(c.time)}`, x + 10, y + cellH + labelH / 2 + 1);
+      });
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('이미지 생성에 실패했습니다.');
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(currentFile?.name || 'video').replace(/\.[^.]+$/, '')}_컷모음.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(err){
+      console.error('montage error', err);
+      alert('전체 이미지 생성에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      montageBtn.disabled = false;
+      montageBtn.textContent = originalLabel;
+    }
+  }
+  montageBtn.addEventListener('click', downloadCutsMontage);
+
+  // ---------- Gemini video summarization ----------
+  const VIDEO_SUMMARY_PROMPT = `제공된 동영상을 분석하여 서론이나 수식어 없이 다음 포맷에 맞춰 아주 명확하고 간결하게 한글로 요약해줘.
+
+📌 [핵심 주제]
+- 영상이 다루는 가장 중요한 주제를 한 문장으로 정리
+
+⏱️ [타임라인 요약]
+- 주요 내용 변화나 장면 전환이 일어나는 시점(MM:SS)과 핵심 내용(각 항목당 한 줄 내외)
+
+💡 [3줄 요약]
+- 꼭 알아야 할 핵심 포인트 3가지를 불렛포인트로 정리`;
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = () => reject(new Error('파일을 읽는 데 실패했습니다.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Client-side video compression (ffmpeg.wasm, single-thread, no COOP/COEP needed) ----------
+  let ffmpegInstance = null;
+  let ffmpegLoadPromise = null;
+
+  function ensureFFmpeg(){
+    if (!ffmpegLoadPromise){
+      ffmpegLoadPromise = (async () => {
+        setProgress(3, '압축 도구를 다운로드하는 중... (최초 1회, 약 25MB)');
+        const ffmpeg = new FFmpeg();
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        ffmpegInstance = ffmpeg;
+      })().catch(err => {
+        ffmpegLoadPromise = null;
+        throw err;
+      });
+    }
+    return ffmpegLoadPromise;
+  }
+
+  async function compressVideoForGemini(file){
+    await ensureFFmpeg();
+    const ext = (file.name.match(/\.[a-zA-Z0-9]+$/) || ['.mp4'])[0];
+    const inputName = 'input' + ext;
+    const outputName = 'output.mp4';
+
+    const onProgress = ({ progress }) => {
+      const pct = Math.max(0, Math.min(1, progress || 0));
+      setProgress(6 + pct * 14, `영상 압축 중... ${Math.round(pct * 100)}%`);
+    };
+    ffmpegInstance.on('progress', onProgress);
+
+    try{
+      await ffmpegInstance.writeFile(inputName, await fetchFile(file));
+      // Downscale to 720p, moderate CRF, faster preset — good enough for Gemini's analysis,
+      // not intended to preserve pristine visual quality.
+      await ffmpegInstance.exec([
+        '-i', inputName,
+        '-vf', 'scale=-2:720',
+        '-c:v', 'libx264', '-crf', '28', '-preset', 'veryfast',
+        '-c:a', 'aac', '-b:a', '96k',
+        outputName
+      ]);
+      const data = await ffmpegInstance.readFile(outputName);
+      return new File([data.buffer], 'compressed.mp4', { type: 'video/mp4' });
+    } finally {
+      ffmpegInstance.off('progress', onProgress);
+      try { await ffmpegInstance.deleteFile(inputName); } catch(e){}
+      try { await ffmpegInstance.deleteFile(outputName); } catch(e){}
+    }
+  }
+
+  async function uploadVideoToGemini(ai, file){
+    let info;
+    try{
+      info = await ai.files.upload({ file, config: { mimeType: file.type || 'video/mp4' } });
+    } catch(err){
+      throw new Error(`Gemini 파일 업로드 실패: ${err.message || err}`);
+    }
+    for (let i = 0; i < 60; i++){
+      if (info.state === 'ACTIVE') return info;
+      if (info.state === 'FAILED') throw new Error('Gemini가 동영상 처리에 실패했습니다.');
+      setProgress(35 + Math.min(i, 15), `Gemini가 동영상을 처리하는 중... (${i+1})`);
+      await new Promise(r => setTimeout(r, 3000));
+      try{
+        info = await ai.files.get({ name: info.name });
+      } catch(err){
+        throw new Error(`Gemini 파일 상태 확인 실패: ${err.message || err}`);
+      }
+    }
+    throw new Error('Gemini 동영상 처리 시간이 초과되었습니다.');
+  }
+
+  async function summarizeVideoWithGemini(file){
+    if (!geminiApiKey) throw new Error('Gemini API 키가 설정되지 않았습니다. 우측 상단 "Gemini 설정"에서 입력해주세요.');
+
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+    let contents;
+
+    if (isYoutubeMode){
+      setProgress(30, 'Gemini에 유튜브 영상 분석을 요청하는 중...');
+      contents = [
+        { fileData: { fileUri: currentYoutubeUrl } },
+        VIDEO_SUMMARY_PROMPT
+      ];
+      setProgress(50, 'Gemini가 영상을 분석하는 중... (시간이 좀 걸릴 수 있어요)');
+      let response;
+      try{
+        response = await ai.models.generateContent({ model: geminiModel, contents });
+      } catch(err){
+        throw new Error(`Gemini API 오류: ${err.message || err}`);
+      }
+      const text = (response && response.text) ? String(response.text).trim() : '';
+      if (!text) throw new Error('Gemini가 빈 응답을 반환했습니다. 비공개/제한된 영상이거나 지원되지 않는 링크일 수 있습니다.');
+      return text;
+    }
+
+    let uploadFile = file;
+    if (file.size > GEMINI_INLINE_MAX_BYTES){
+      try{
+        uploadFile = await compressVideoForGemini(file);
+        setProgress(22, `압축 완료 (${formatBytes(file.size)} → ${formatBytes(uploadFile.size)})`);
+      } catch(err){
+        console.warn('video compression failed, falling back to the original file', err);
+        uploadFile = file; // fall through to the File API path with the original file
+      }
+    }
+
+    if (uploadFile.size <= GEMINI_INLINE_MAX_BYTES){
+      setProgress(28, 'Gemini에 영상을 전송하는 중...');
+      const base64Data = await fileToBase64(uploadFile);
+      contents = [
+        { inlineData: { data: base64Data, mimeType: uploadFile.type || 'video/mp4' } },
+        VIDEO_SUMMARY_PROMPT
+      ];
+    } else {
+      setProgress(30, 'Gemini에 영상 파일을 업로드하는 중... (용량에 따라 시간이 걸릴 수 있어요)');
+      const uploaded = await uploadVideoToGemini(ai, uploadFile);
+      contents = [
+        createPartFromUri(uploaded.uri, uploaded.mimeType),
+        VIDEO_SUMMARY_PROMPT
+      ];
+    }
+
+    setProgress(50, 'Gemini가 영상을 분석하는 중... (시간이 좀 걸릴 수 있어요)');
+    let response;
+    try{
+      response = await ai.models.generateContent({ model: geminiModel, contents });
+    } catch(err){
+      throw new Error(`Gemini API 오류: ${err.message || err}`);
+    }
+
+    const text = (response && response.text) ? String(response.text).trim() : '';
+    if (!text) throw new Error('Gemini가 빈 응답을 반환했습니다.');
+    return text;
+  }
+
+  async function generateSummary(){
+    summaryError.classList.add('hidden');
+    summaryError.textContent = '';
+    summaryRetryBtn.classList.add('hidden');
+    summaryText.classList.add('loading');
+    summaryText.textContent = '영상을 분석하는 중입니다...';
+    summaryEyebrow.textContent = '영상 요약';
+
+    if (!geminiApiKey){
+      summaryText.textContent = 'Gemini API 키가 설정되지 않았습니다. 우측 상단 "Gemini 설정"에서 키를 입력해주세요.';
+      summaryText.classList.remove('loading');
+      summaryEyebrow.textContent = '영상 요약 · 키 필요';
+      settingsModal.classList.add('open');
+      summaryRetryBtn.classList.remove('hidden');
+      return;
+    }
+
+    try{
+      overallSummary = await summarizeVideoWithGemini(currentFile);
+      summaryText.textContent = overallSummary;
+      summaryText.classList.remove('loading');
+      summaryEyebrow.textContent = `영상 요약 · Gemini (${geminiModel})`;
+    } catch(err){
+      console.error('gemini summary error', err);
+      overallSummary = '';
+      summaryText.textContent = '요약을 생성하지 못했습니다.';
+      summaryText.classList.remove('loading');
+      summaryEyebrow.textContent = '영상 요약 · 실패';
+      summaryError.textContent = `마지막 오류: ${err.message || err}`;
+      summaryError.classList.remove('hidden');
+      summaryRetryBtn.classList.remove('hidden');
+    }
+  }
+  summaryRetryBtn.addEventListener('click', ()=> generateSummary());
+
+  // ---------- Export ----------
+  exportBtn.addEventListener('click', ()=>{
+    if (!cuts.length && !overallSummary) return;
+    const titleName = isYoutubeMode ? currentYoutubeUrl : (currentFile ? currentFile.name : '동영상');
+    const lines = [];
+    lines.push(`# ${titleName} 분석 리포트`);
+    lines.push('');
+    lines.push('## 영상 요약 (Gemini)');
+    lines.push(overallSummary || '(요약 없음)');
+    if (cuts.length){
+      lines.push('');
+      lines.push('## 주요 컷 타임스탬프');
+      cuts.forEach((c,i)=>{
+        lines.push(`${i+1}. ${formatTime(c.time)}`);
+      });
+    }
+    const blob = new Blob([lines.join('\n')], {type:'text/markdown'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const baseName = isYoutubeMode ? 'youtube_video' : (currentFile?.name || 'video').replace(/\.[^.]+$/,'');
+    a.download = `${baseName}_리포트.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- Helpers ----------
+  function setProgress(pct, label){
+    pct = clamp(pct, 0, 100);
+    progressFill.style.width = pct + '%';
+    progressPct.textContent = Math.round(pct) + '%';
+    statusText.textContent = label;
+  }
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+  function formatTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  function renderMeta(){
+    const entries = metaBasicEntries.concat(metaEmbeddedEntries);
+    metaGrid.innerHTML = '';
+    entries.forEach(([label, value])=>{
+      const l = document.createElement('div'); l.className = 'meta-label'; l.textContent = label;
+      const v = document.createElement('div'); v.className = 'meta-value'; v.textContent = value;
+      metaGrid.appendChild(l); metaGrid.appendChild(v);
+    });
+  }
+
+  function gcd(a, b){ return b ? gcd(b, a % b) : a; }
+
+  function formatDurationLong(sec){
+    sec = Math.max(0, Math.round(sec));
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+    if (h > 0) return `${h}시간 ${String(m).padStart(2,'0')}분 ${String(s).padStart(2,'0')}초`;
+    return `${m}분 ${String(s).padStart(2,'0')}초`;
+  }
+
+  // ---------- Embedded MP4/QuickTime metadata (best-effort) ----------
+  const ILST_LABELS = {
+    '\u00A9nam': '제목', '\u00A9ART': '작성자/아티스트', '\u00A9day': '날짜(태그)',
+    '\u00A9cmt': '설명', '\u00A9too': '인코더/도구', '\u00A9alb': '앨범', '\u00A9gen': '장르', 'desc': '설명'
+  };
+  const QT_EPOCH_OFFSET = 2082844800; // seconds between 1904-01-01 and 1970-01-01
+
+  async function readBytes(file, start, length){
+    const blob = file.slice(start, start + length);
+    const buf = await blob.arrayBuffer();
+    return new DataView(buf);
+  }
+
+  async function findMoovBox(file){
+    let offset = 0;
+    const fileSize = file.size;
+    let iterations = 0;
+    while (offset < fileSize && iterations++ < 500){
+      const header = await readBytes(file, offset, 16);
+      if (header.byteLength < 8) break;
+      let size = header.getUint32(0, false);
+      const type = String.fromCharCode(header.getUint8(4), header.getUint8(5), header.getUint8(6), header.getUint8(7));
+      let headerSize = 8;
+      if (size === 1){
+        if (header.byteLength < 16) break;
+        const high = header.getUint32(8, false), low = header.getUint32(12, false);
+        size = high * 4294967296 + low;
+        headerSize = 16;
+      } else if (size === 0){
+        size = fileSize - offset;
+      }
+      if (size < headerSize) break;
+      if (type === 'moov'){
+        const contentLen = Math.min(size - headerSize, 8 * 1024 * 1024); // cap moov read at 8MB, plenty for metadata
+        return await readBytes(file, offset + headerSize, contentLen);
+      }
+      offset += size;
+    }
+    return null;
+  }
+
+  function walkBoxes(view, start, end, callback){
+    let offset = start;
+    let iterations = 0;
+    while (offset < end - 8 && iterations++ < 2000){
+      const size = view.getUint32(offset, false);
+      const type = String.fromCharCode(
+        view.getUint8(offset+4), view.getUint8(offset+5), view.getUint8(offset+6), view.getUint8(offset+7)
+      );
+      let headerSize = 8, boxSize = size;
+      if (size === 1){
+        if (offset + 16 > end) break;
+        const high = view.getUint32(offset+8, false), low = view.getUint32(offset+12, false);
+        boxSize = high * 4294967296 + low;
+        headerSize = 16;
+      } else if (size === 0){
+        boxSize = end - offset;
+      }
+      if (boxSize < headerSize || offset + boxSize > end) break;
+      callback(type, offset, headerSize, boxSize);
+      offset += boxSize;
+    }
+  }
+
+  function parseMvhd(view, contentOffset){
+    const version = view.getUint8(contentOffset);
+    let creationTime;
+    try{
+      if (version === 1){
+        const high = view.getUint32(contentOffset+4, false), low = view.getUint32(contentOffset+8, false);
+        creationTime = high * 4294967296 + low;
+      } else {
+        creationTime = view.getUint32(contentOffset+4, false);
+      }
+    } catch(e){ return null; }
+    if (!creationTime) return null;
+    const unixSeconds = creationTime - QT_EPOCH_OFFSET;
+    if (unixSeconds <= 0) return null;
+    return new Date(unixSeconds * 1000);
+  }
+
+  function parseIlstItemText(view, start, end){
+    let result = null;
+    walkBoxes(view, start, end, (type, offset, headerSize, boxSize)=>{
+      if (type === 'data' && !result){
+        const contentStart = offset + headerSize;
+        if (contentStart + 8 > offset + boxSize) return;
+        const classCode = view.getUint32(contentStart, false) & 0xFFFFFF;
+        const payloadStart = contentStart + 8;
+        const payloadLen = (offset + boxSize) - payloadStart;
+        if (payloadLen > 0 && payloadLen < 2000 && classCode === 1){
+          const bytes = new Uint8Array(view.buffer, view.byteOffset + payloadStart, payloadLen);
+          try { result = new TextDecoder('utf-8').decode(bytes); } catch(e){}
+        }
+      }
+    });
+    return result;
+  }
+
+  async function populateEmbeddedMeta(file){
+    const isMp4Like = /mp4|quicktime|m4v/i.test(file.type) || /\.(mp4|mov|m4v)$/i.test(file.name);
+    if (!isMp4Like){
+      metaNote.textContent = 'MP4/MOV 계열 파일에서만 임베디드 메타데이터(내부 생성일시·태그) 추출을 시도합니다. 이 파일은 해당하지 않습니다.';
+      renderMeta();
+      return;
+    }
+    try{
+      const moov = await findMoovBox(file);
+      if (!moov){
+        metaNote.textContent = '이 파일에서 임베디드 메타데이터 영역(moov)을 찾지 못했습니다.';
+        renderMeta();
+        return;
+      }
+      const extra = [];
+      walkBoxes(moov, 0, moov.byteLength, (type, offset, headerSize, boxSize)=>{
+        if (type === 'mvhd'){
+          const date = parseMvhd(moov, offset + headerSize);
+          if (date) extra.push(['내부 생성 타임스탬프', date.toLocaleString('ko-KR') + ' (mvhd)']);
+        }
+        if (type === 'udta'){
+          walkBoxes(moov, offset+headerSize, offset+boxSize, (t2,o2,h2,b2)=>{
+            if (t2 === 'meta'){
+              // 'meta' is a full box: 4 bytes version/flags precede its children
+              walkBoxes(moov, o2+h2+4, o2+b2, (t3,o3,h3,b3)=>{
+                if (t3 === 'ilst'){
+                  walkBoxes(moov, o3+h3, o3+b3, (t4,o4,h4,b4)=>{
+                    const label = ILST_LABELS[t4];
+                    if (label){
+                      const val = parseIlstItemText(moov, o4+h4, o4+b4);
+                      if (val) extra.push([label, val]);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+      metaEmbeddedEntries = extra;
+      metaNote.textContent = extra.length
+        ? '위 항목은 파일에 실제로 기록된 태그/타임스탬프입니다. 편집·재인코딩 과정에서 실제 촬영 정보와 달라지거나 누락될 수 있습니다.'
+        : '이 파일에서는 제목/작성자/촬영일시 같은 추가 임베디드 메타데이터를 찾지 못했습니다 (기록되지 않았거나 재인코딩 시 제거됐을 수 있습니다).';
+      renderMeta();
+    } catch(err){
+      console.error('metadata parse error', err);
+      metaNote.textContent = '메타데이터 분석 중 오류가 발생했습니다.';
+      renderMeta();
+    }
+  }
+
+  function formatBytes(bytes){
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+  }
+})();
+</script>
+</body>
+</html>
