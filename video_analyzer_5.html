@@ -1254,7 +1254,7 @@ import { toBlobURL, fetchFile } from 'https://esm.run/@ffmpeg/util';
         VIDEO_SUMMARY_PROMPT
       ];
     } else {
-      setProgress(30, 'Gemini에 영상 파일을 업로드하는 중... (용량에 따라 시간이 걸릴 수 있어요)');
+      setProgress(30, 'Gemini에 영상 파일을 업로드하는 중... <br> (용량에 따라 시간이 걸릴 수 있어요)');
       const uploaded = await uploadVideoToGemini(ai, uploadFile);
       contents = [
         createPartFromUri(uploaded.uri, uploaded.mimeType),
